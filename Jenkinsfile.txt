@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    stages {
+        stage('Pre cleanup') {
+            steps {
+                sh 'rm -r -f 2TIN_ResearchProject'
+            }
+        }
+        
+        stage('Fetching Code') {
+            steps {
+                sh 'git clone https://github.com/robbevaes2/2TIN_ResearchProject'
+            }
+        }
+        stage('Building Dependencies') {
+            steps {
+                sh 'java -version'
+                sh 'php --version'
+                sh 'mysql --version'
+                sh 'composer --version'
+                sh 'cd /var/lib/jenkins/workspace/Pipeline_Jenkins/2TIN_ResearchProject && composer install'
+
+            }
+            post {
+                failure {
+                    sh 'echo version mismatch'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                
+                sh 'cd /var/lib/jenkins/workspace/Pipeline_Jenkins/2TIN_ResearchProject && ./vendor/bin/phpunit tests --log-junit report.xml && cat report.xml'
+                
+            }
+            post {
+                always{
+                    junit '**/2TIN_ResearchProject/*.xml'
+                }
+            }
+        }
+        stage('Building Artifact') {
+            steps{
+                archiveArtifacts artifacts: '2TIN_ResearchProject/', excludes: '2TIN_ResearchProject/*.sql, 2TIN_ResearchProject/*.md'
+                }
+            }
+        stage('Deploy') {
+            steps {
+                sh 'sudo cp -r 2TIN_ResearchProject/ /var/www/html/'
+                
+            }
+        }
+        stage('Post-cleanup') {
+            steps {
+                echo 'Cleaning up....'
+            }
+        }
+    }
+}
