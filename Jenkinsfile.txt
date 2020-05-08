@@ -50,10 +50,5 @@ pipeline {
                 
             }
         }
-        stage('Post-cleanup') {
-            steps {
-                echo 'Cleaning up....'
-            }
-        }
     }
 }
